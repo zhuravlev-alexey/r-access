@@ -22,7 +22,7 @@ class r_proxy:
         self.config['r_addr'] = '0.0.0.0'
         self.config['r_ports'] = (5900,5901,5902,5903,5904,5905,5906,)
         self.config['log'] = '/var/log/rd_access.log'
-        self.config['r_access_dir'] = '/home/za/fs.iteksys.ru/Code/r-access/r-access/'
+        self.config['r_access_dir'] = '/var/www/r-access/'
         self.config['ip_regexp'] = '^(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.' + \
                                 '(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.' + \
                                 '(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.' + \

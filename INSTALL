@@ -7,4 +7,8 @@ cd /var/www/
 git clone https://github.com/zhuravlev-alexey/r-access.git
 cd ./r-access/
 
+chmod -R a+rwx ./db
+touch /var/log/rd_access.log
+chown www-data:www-data /var/log/rd_access.log
+
 

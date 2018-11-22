@@ -15,10 +15,10 @@ from threading import Thread
 class scanner:
     def __init__ (self):
         self.config = {}
-        self.config['scan_addresses'] = ('192.168.1.50-192.168.1.54', )
+        self.config['scan_addresses'] = ('192.168.1.1-192.168.1.254', )
         self.config['scan_ports'] = (5900,)
-        self.config['r_access_dir'] = '/home/za/fs.iteksys.ru/Code/r-access/r-access/'
-        self.config['threads'] = 3
+        self.config['r_access_dir'] = '/var/www/r-access/'
+        self.config['threads'] = 5
 
         values = []
         for item in self.config['scan_addresses']:
@@ -34,6 +34,9 @@ class scanner:
                         test_socket.connect((l_ip, l_port))
                     except (ConnectionRefusedError, socket.timeout):
                         continue
+                    except OSError:
+                        continue
+
         
                     try:
                         l_hostname = socket.gethostbyaddr(l_ip)[0]
