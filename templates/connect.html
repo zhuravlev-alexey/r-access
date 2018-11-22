@@ -1,0 +1,53 @@
+<!-- UIkit CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-rc.20/css/uikit.min.css" />
+
+<!-- UIkit JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-rc.20/js/uikit.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-rc.20/js/uikit-icons.min.js"></script>
+
+<body>
+{% if r_port %}
+<p>Готово! Подключайтесь на порт {{ r_port }}</p>
+{% endif %}
+
+<form action="/connect" method="get">
+    Имя хоста или IP: <input type="text" name="l_dst">:<input type="text" name="l_port">
+    <input type="submit" value="Submit" />
+</form>
+
+
+<div class="uk-child-width-1-2 uk-flex-center" style="width: 80%" uk-grid>
+<div>
+    <div class="uk-card uk-card-default">
+    <h3 class="uk-card-title">Обнаруженные серверы</h3>
+    <table>
+        {% for server in detected_servers %}
+            <tr>
+                <td>
+                    <span uk-icon="desktop"></span> {{ server[0] }}:{{ server[1] }}
+                    {% if server[2] %}
+                        ({{ server[2] }})
+                    {% endif %}
+                    <a href="/connect?l_dst={{ server[0] }}&l_port={{ server[1] }}" uk-icon="icon: shrink" style="font-size: 200%; font-weight: 600;"></a>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+    </div>
+</div>
+
+<div>
+    <div class="uk-card uk-card-default">
+    <h3 class="uk-card-title">Активные серверы</h3>
+    <table>
+        {% for server in active_servers %}
+            <tr>
+                <td>{{ server[0] }}:{{ server[1] }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    </div>
+</div>
+
+</div>
+</body>
