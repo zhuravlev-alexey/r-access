@@ -1,0 +1,10 @@
+# Debian 9:
+aptitude install apache2 libapache2-mod-wsgi-py3
+a2enmod wsgi
+
+# Get r-access
+cd /var/www/
+git clone https://github.com/zhuravlev-alexey/r-access.git
+cd ./r-access/
+
+
