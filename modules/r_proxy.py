@@ -7,17 +7,15 @@ import logging
 import sqlite3
 import datetime
 import re
+import signal
+import datetime
 from threading import Thread
 
 
 
 
 class r_proxy:
-    """ Class doc """
-    
-    def __init__ (self, l_dst, l_port):
-        """ Class initialiser """
-
+    def __init__ (self):
         self.config = {}
         self.config['r_addr'] = '0.0.0.0'
         self.config['r_ports'] = (5900,5901,5902,5903,5904,5905,5906,)
@@ -31,17 +29,15 @@ class r_proxy:
 
         logging.basicConfig(filename=self.config['log'], level=logging.DEBUG)
         logging.getLogger('rd_proxy')
+
+    def start(self, l_dst, l_port):
         logging.debug('Starting')
-
         self.l_port = int(l_port)
-
-        
         logging.debug('get l_dst ' + str(l_dst))
 
         if l_dst in ('127.0.0.1', 'localhost'):
             logging.error("Left address " + l_dst + " - denied.")
             print("Left address " + l_dst + " - denied.", flush=True)
-            
             sys.exit()
         elif re.match(self.config['ip_regexp'], l_dst):
             self.l_ip = l_dst
@@ -61,25 +57,23 @@ class r_proxy:
             logging.error("Destination address invalid: not matches for IP or hostname")
             print("Destination address invalid: not matches for IP or hostname", flush=True)
             sys.exit()
-        
-        self.start()
 
-
-    def start(self):
         # Пытаемся забиндиться на свободный порт
-        for r_port in self.config['r_ports']:
+        r_port = None
+        for port in self.config['r_ports']:
             logging.info('Trying bind on ' + self.config['r_addr'] + ':' + str(r_port))
             try:
                 r_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                r_socket.bind((self.config['r_addr'], r_port))
+                r_socket.bind((self.config['r_addr'], port))
                 r_socket.listen(5)
+                r_port = port
                 logging.info('Listen on ' + self.config['r_addr'] + ':' + str(r_port))
                 break
             except:
                 logging.error('Fail: ')
-        if not r_socket:
+        if not r_port:
             logging.error('Can\'t bind')
-            exit
+            sys.exit()
 
 
         try:
@@ -88,7 +82,7 @@ class r_proxy:
             l_socket.connect((self.l_ip, self.l_port))
         except:
             logging.error("Can't connect to " + self.l_ip + ":" + str(self.l_port) + "!")
-            print("Can't connect to " + self.l_ip + ":" + self.l_port + "!", flush=True)
+            print("Can't connect to " + self.l_ip + ":" + str(self.l_port) + "!", flush=True)
             sys.exit()
 
 
@@ -98,10 +92,10 @@ class r_proxy:
         c.execute("DELETE FROM active_r_proxy WHERE r_port=:r_port", {'r_port':r_port});
         # Insert into active_r_proxy information about new active r_proxy
         c.execute("INSERT INTO active_r_proxy VALUES (?,?,?,?,?,?,?,?)", (self.l_ip,
-                                                                        self.l_hostname, 
                                                                         self.l_port,
+                                                                        self.l_hostname, 
                                                                         r_port,
-                                                                        os.getpid(),
+                                                                        int(os.getpid()),
                                                                         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                                                         'waiting',
                                                                         None)
@@ -111,7 +105,6 @@ class r_proxy:
 
         # Return r_port to parent process
         print(str(r_port), flush=True)
-        
         while True:
             logging.info('Waiting')
             r_socket, address = r_socket.accept()
@@ -122,9 +115,42 @@ class r_proxy:
             r_t.start()
             l_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             l_socket.connect((self.l_ip, self.l_port))
-            
-    
-    
+
+    def stop(self, pids):
+        print("Stop proccesses:", pids)
+        conn = sqlite3.connect(self.config['r_access_dir'] + '/db/r_access.sqlite')
+        c = conn.cursor()
+        for pid in pids:
+            print("Trying to stop proccess ", pid)
+            c.execute('SELECT * FROM active_r_proxy WHERE pid=' + pid)
+            if len(c.fetchall()) == 0:
+                print("Can't find pid in db", pid)
+                continue
+            try:
+                print("Trying to terminate ", pid)
+                os.kill(int(pid), signal.SIGKILL)
+            except:
+                print("Can't terminate process ", sys.exc_info())
+                continue
+            c.execute('DELETE FROM active_r_proxy WHERE pid=' + pid)
+        conn.commit()
+        conn.close()
+
+
+    def clean(self):
+        conn = sqlite3.connect(self.config['r_access_dir'] + '/db/r_access.sqlite')
+        c = conn.cursor()
+        c.execute('SELECT pid FROM active_r_proxy')
+        pids= c.fetchall()
+        for pid in pids:
+            try:
+                os.kill(pid[0], 0)
+            except OSError:
+                c.execute('DELETE FROM active_r_proxy WHERE pid=' + str(pid[0]))
+        conn.commit()
+        conn.close()
+
+
     def worker(self, socket1, socket2):
         while True:
             data = socket1.recv(1024)
@@ -134,5 +160,6 @@ class r_proxy:
                 return
             socket2.send(data)
 
-
-r_proxy(sys.argv[1], sys.argv[2])
+if __name__ == '__main__':
+    rp = r_proxy()
+    rp.start(sys.argv[1], sys.argv[2])

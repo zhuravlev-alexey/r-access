@@ -16,9 +16,9 @@ class scanner:
     def __init__ (self):
         self.config = {}
         self.config['scan_addresses'] = ('192.168.1.1-192.168.1.254', )
-        self.config['scan_ports'] = (5900,)
+        self.config['scan_ports'] = (5900,3389,22)
         self.config['r_access_dir'] = '/var/www/r-access/'
-        self.config['threads'] = 5
+        self.config['threads'] = 10
 
         values = []
         for item in self.config['scan_addresses']:
@@ -40,16 +40,17 @@ class scanner:
         
                     try:
                         l_hostname = socket.gethostbyaddr(l_ip)[0]
+                        print(socket.gethostbyaddr(l_ip))
                     except:
                         l_hostname = 'unknown'
                     print("Detected: " + l_ip + ":" + str(l_port) + " (" + l_hostname + ")")
-                    values.append((l_ip, l_port, l_hostname))
+                    values.append((l_ip, l_port, l_hostname, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
         conn = sqlite3.connect(self.config['r_access_dir'] + '/db/r_access.sqlite')
         c = conn.cursor()
         c.execute("DELETE FROM detected_servers")
         c.execute("VACUUM")
-        c.executemany("INSERT INTO detected_servers VALUES (?,?,?)", values)
+        c.executemany("INSERT INTO detected_servers VALUES (?,?,?,?)", values)
         conn.commit()
         conn.close()
 

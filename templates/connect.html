@@ -4,8 +4,86 @@
 <!-- UIkit JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-rc.20/js/uikit.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.0.0-rc.20/js/uikit-icons.min.js"></script>
+<script>
+    var detected_servers = new Array();
 
-<body>
+    
+    function disconnect() {
+        var active_proxy_list = document.getElementById('active_proxy_list')
+        if (!active_proxy_list.options) {
+            return False;
+        }
+        var url = "/disconnect?pids=";
+        for (var i = 0; i < active_proxy_list.options.length; i++) {
+            if (active_proxy_list.options[i].selected) {
+                url += active_proxy_list.options[i].value + ",";
+            }
+        }
+        url = url.substring(0, url.length - 1);
+        window.location.href = url;
+    }
+
+    function connect() {
+        detected_servers_list = document.getElementById('detected_servers_list');
+        window.location.href = "/connect?dst=" + detected_servers_list.options[detected_servers_list.selectedIndex].value
+    }
+
+
+    function init() {
+        {% for server in detected_servers %}
+                detected_servers.push(['{{ server[0] }}', '{{ server[1] }}', '{{ server[2] }}']);
+        {% endfor %}
+        
+        var ports = [];
+        for (var i = 0; i < detected_servers.length; i++) {
+            var flag = 0
+            for (var k = 0; k < ports.length; k++) {
+                if (ports[k] === detected_servers[i][1]) {
+                    flag = 1;
+                }
+            }
+            if (!flag) {
+                ports.push(detected_servers[i][1]);
+            }
+        }
+        // Create filter
+        for (var i = 0; i < ports.length; i++) {
+            document.getElementById('ds_filter_block').innerHTML += "<input type=\"checkbox\" name=\"ds_filter_opt\" value=\"" + ports[i] + "\" onChange=\"ds_filter()\" checked> " + ports[i] + " ";
+        }
+    }
+
+    function ds_filter() {
+        var f_opt = document.getElementsByName('ds_filter_opt');
+        var detected_servers_list = document.getElementById('detected_servers_list');
+        var filter = []
+        
+        for (var i = 0; i < f_opt.length; i++) {
+            if (f_opt[i].checked) {
+                filter.push(f_opt[i].value);
+            }
+        }
+        // clean all options
+        for (var i = detected_servers_list.options.length; i >= 0; i--) {
+            detected_servers_list.remove(i)
+        }
+        
+        for (var i = 0; i < detected_servers.length; i++) {
+            flag = 0;
+            for (var k = 0; k < filter.length; k++) {
+                if (detected_servers[i][1] === filter[k]) {
+                    flag = 1;
+                }
+
+            }
+            if (flag) {
+                detected_servers_list.options[detected_servers_list.options.length] = new Option(detected_servers[i][0] + ":" + detected_servers[i][1], detected_servers[i][0] + ":" + detected_servers[i][1]);
+            }
+        }
+    }
+
+</script>
+
+<body onLoad="init()">
 {% if r_port %}
 <p>Готово! Подключайтесь на порт {{ r_port }}</p>
 {% endif %}
@@ -18,34 +96,30 @@
 
 <div class="uk-child-width-1-2 uk-flex-center" style="width: 80%" uk-grid>
 <div>
-    <div class="uk-card uk-card-default">
+    <div class="uk-card uk-card-default" align="center">
     <h3 class="uk-card-title">Обнаруженные серверы</h3>
-    <table>
+    <div id="ds_filter_block">
+    </div>
+    <select name="detected_servers_list" id="detected_servers_list" onDblClick="connect()" style="width: 300px;" size="20">
         {% for server in detected_servers %}
-            <tr>
-                <td>
-                    <span uk-icon="desktop"></span> {{ server[0] }}:{{ server[1] }}
-                    {% if server[2] %}
-                        ({{ server[2] }})
-                    {% endif %}
-                    <a href="/connect?l_dst={{ server[0] }}&l_port={{ server[1] }}" uk-icon="icon: shrink" style="font-size: 200%; font-weight: 600;"></a>
-                </td>
-            </tr>
+            <option value="{{ server[0] }}:{{ server[1] }}">{{ server[0] }}:{{ server[1] }}</option>
         {% endfor %}
-    </table>
+    </select>
+    <hr/>
+    <button onClick="connect()">Запустить</button>
     </div>
 </div>
 
 <div>
-    <div class="uk-card uk-card-default">
-    <h3 class="uk-card-title">Активные серверы</h3>
-    <table>
-        {% for server in active_servers %}
-            <tr>
-                <td>{{ server[0] }}:{{ server[1] }}</td>
-            </tr>
+    <div class="uk-card uk-card-default" align="center">
+    <h3 class="uk-card-title">Запущенные прокси</h3>
+    <select name="active_proxy_list" id="active_proxy_list" multiple style="width: 300px;" size="20">
+        {% for server in active_proxy %}
+            <option value={{ server[4] }}>{{ server[0] }}:{{ server[1] }}->:{{ server[3] }}</option>
         {% endfor %}
-    </table>
+    </select>
+    <hr/>
+    <button onClick="disconnect()">Остановить</button>
     </div>
 </div>
 
