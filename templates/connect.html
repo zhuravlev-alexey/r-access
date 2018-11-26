@@ -24,10 +24,15 @@
     }
 
     function connect() {
-        detected_servers_list = document.getElementById('detected_servers_list');
+        var detected_servers_list = document.getElementById('detected_servers_list');
         window.location.href = "/connect?dst=" + detected_servers_list.options[detected_servers_list.selectedIndex].value
     }
 
+    function connect_form() {
+        var l_dst= document.getElementById('l_dst').value;
+        var l_port = document.getElementById('l_port').value;
+        window.location.href = "/connect?dst=" + l_dst + ":" + l_port;
+    }
 
     function init() {
         {% for server in detected_servers %}
@@ -89,8 +94,8 @@
 {% endif %}
 
 <form action="/connect" method="get">
-    Имя хоста или IP: <input type="text" name="l_dst">:<input type="text" name="l_port">
-    <input type="submit" value="Submit" />
+    Имя хоста или IP: <input type="text" name="l_dst" id="l_dst">:<input type="text" name="l_port" id="l_port">
+    <input type="button" value="Подключиться" onClick="connect_form()" />
 </form>
 
 
